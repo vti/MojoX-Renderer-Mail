@@ -1,0 +1,10 @@
+Build.PL
+Changes
+MANIFEST
+README
+lib/MojoX/Renderer/Mail.pm
+t/00-load.t
+t/manifest.t
+t/pod-coverage.t
+t/pod.t
+examples/test
