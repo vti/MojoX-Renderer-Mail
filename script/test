@@ -1,0 +1,161 @@
+#!/usr/bin/perl
+use lib qw(lib ../lib ../mojo/lib);
+use utf8;
+
+use Mojolicious::Lite;
+use MojoX::Renderer::Mail;
+
+app->renderer->add_handler(
+	Mail => MojoX::Renderer::Mail->build(
+		from     => 'sharifulin@gmail.com',
+		encoding => 'base64',
+		
+		# charset  => 'UTF-8',
+		how      => 'sendmail',
+		howargs  => [ '/usr/sbin/sendmail -t' ],
+	),
+);
+
+get '/simple' => sub {
+	my $self = shift;
+	
+	$self->render(
+		handler => 'mail',
+		
+		mail => {
+			To      => 'Анатолий Шарифулин sharifulin@gmail.com',
+			Cc      => 'Анатолий Шарифулин sharifulin@gmail.com, Анатолий2 Шарифулин2 sharifulin@gmail.com',
+			Subject => 'Тест',
+			Type    => 'text/html',
+			Data    => "<p>Письмо!</p>",
+		},
+	);
+	
+	$self->render_text('OK');
+};
+
+get '/attach' => sub {
+	my $self = shift;
+	
+	$self->render(
+		handler => 'mail',
+		
+		# charset => 'UTF-8',
+		# mimeword => 0 || 1,
+		
+		mail => {
+			To      => 'sharifulin@gmail.com',
+			Subject => 'Тест аттач',
+			Type    => 'multipart/mixed'
+		},
+		
+		attach => [
+			{
+				# Type => 'TEXT',
+				Data => 'Текст письма',
+			},
+			{
+				Type        => 'application/octet-stream',
+				Filename    => 'crash.data',
+				Disposition => 'attachment',
+				Encoding    => 'binary',
+				Data        => 'binary data binary data binary data binary data binary data',
+			},
+		],
+		
+		headers => [ { 'X-My-Header' => 'Mojolicious' } ],
+		
+		# attr => [ ],
+	);
+	
+	$self->render_text('OK');
+};
+
+get '/multi' => sub {
+	my $self = shift;
+	
+	$self->render(
+		handler => 'mail',
+		
+		mail => {
+			To      => 'sharifulin@gmail.com',
+			Subject => 'Мульти',
+			Type    => 'multipart/mixed'
+		},
+		
+		attach => [
+			{
+		        Type     => 'TEXT',
+		        Encoding => '7bit',
+		        Data     => "Just a quick note to say hi!"
+		    },
+			{
+		        Type     => 'image/gif',
+		        Path     => $0
+		    },
+			{
+		        Type     => 'x-gzip',
+		        Path     => "gzip < $0 |",
+		        ReadNow  => 1,
+		        Filename => "somefile.zzz"
+		    },
+		],
+	);
+	
+	$self->render_text('OK');
+};
+
+get '/render' => sub {
+	my $self = shift;
+	
+	$self->render(
+		handler => 'mail',
+		
+		mail => {
+			To      => 'sharifulin@gmail.com',
+			Subject => 'Тест render',
+			Type    => 'text/html',
+			Data    => $self->render_partial('render', format => 'mail'),
+		},
+	);
+	
+	$self->render(format => 'html');
+} => 'render';
+
+get '/render2' => sub {
+	my $self = shift;
+	
+	my $data = $self->render_partial('render2', format => 'mail');
+	
+	$self->render(
+		handler => 'mail',
+		
+		mail => {
+			To      => 'sharifulin@gmail.com',
+			Subject => $self->stash('subject'),
+			Type    => 'text/html',
+			Data    => $data,
+		},
+	);
+	
+	$self->render(template => 'render', format => 'html');
+} => 'render';
+
+app->start;
+
+__DATA__
+
+@@ render.html.ep
+<p>Привет render!</p>
+
+@@ render.mail.ep
+<p>Привет васса render!</p>
+
+@@ render2.mail.ep
+% stash 'subject' => 'Привет render2';
+
+<p>Привет васса render2!</p>
+
+__END__
+
+Run: DEBUG=1 PATH_INFO='/multi' script/test cgi
