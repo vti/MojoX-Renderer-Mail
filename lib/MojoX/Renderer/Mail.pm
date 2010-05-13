@@ -101,6 +101,7 @@ MojoX::Renderer::Mail - Mail renderer for Mojo and Mojolicious, uses MIME::Lite
 SYNOPSIS
 
 	#!/usr/bin/perl
+	use lib qw(lib ../lib ../mojo/lib ../../mojo/lib);
 	use utf8;
 
 	use Mojolicious::Lite;
@@ -110,9 +111,9 @@ SYNOPSIS
 		mail => MojoX::Renderer::Mail->build(
 			from     => 'sharifulin@gmail.com',
 			encoding => 'base64',
-		
+	
 			# charset  => 'UTF-8',
-		
+	
 			how      => 'sendmail',
 			howargs  => [ '/usr/sbin/sendmail -t' ],
 		),
@@ -120,71 +121,71 @@ SYNOPSIS
 
 	get '/simple' => sub {
 		my $self = shift;
-	
+
 		$self->render(
 			handler => 'mail',
-		
+	
 			mail => {
 				To      => 'Анатолий Шарифулин sharifulin@gmail.com',
 				Cc      => 'Анатолий Шарифулин sharifulin@gmail.com, Анатолий2 Шарифулин2 sharifulin@gmail.com',
 				Subject => 'Тест',
-				Type    => 'text/htMail',
+				Type    => 'text/html',
 				Data    => "<p>Письмо!</p>",
 			},
 		);
-	
+
 		$self->render_text('OK');
 	};
 
 	get '/attach' => sub {
 		my $self = shift;
-	
+
 		$self->render(
 			handler => 'mail',
-		
+	
 			# charset => 'UTF-8',
-			# mimeword => 0,
-		
+			# mimeword => 0 || 1,
+	
 			mail => {
 				To      => 'sharifulin@gmail.com',
 				Subject => 'Тест аттач',
 				Type    => 'multipart/mixed'
 			},
-		
+	
 			attach => [
 				{
 					# Type => 'TEXT',
 					Data => 'Текст письма',
 				},
 				{
-					Type        => 'application/octet-stream',
+					Type        => 'BINARY',
 					Filename    => 'crash.data',
 					Disposition => 'attachment',
-					Encoding    => 'binary',
+					Encoding    => '8bit',
 					Data        => 'binary data binary data binary data binary data binary data',
 				},
 			],
-		
+	
 			headers => [ { 'X-My-Header' => 'Mojolicious' } ],
-		
+	
 			# attr => [ ],
 		);
-	
+
 		$self->render_text('OK');
 	};
 
 	get '/multi' => sub {
 		my $self = shift;
-	
+
 		$self->render(
 			handler => 'mail',
-		
+	
 			mail => {
 				To      => 'sharifulin@gmail.com',
 				Subject => 'Мульти',
 				Type    => 'multipart/mixed'
 			},
-		
+	
 			attach => [
 				{
 			        Type     => 'TEXT',
@@ -199,39 +200,39 @@ SYNOPSIS
 			        Type     => 'x-gzip',
 			        Path     => "gzip < $0 |",
 			        ReadNow  => 1,
-			        Filename => "somefile.tgz"
+			        Filename => "somefile.zzz"
 			    },
 			],
 		);
-	
+
 		$self->render_text('OK');
 	};
 
 	get '/render' => sub {
 		my $self = shift;
-	
+
 		$self->render(
 			handler => 'mail',
-		
+	
 			mail => {
 				To      => 'sharifulin@gmail.com',
 				Subject => 'Тест render',
-				Type    => 'text/htMail',
+				Type    => 'text/html',
 				Data    => $self->render_partial('render', format => 'mail'),
 			},
 		);
-	
+
 		$self->render(format => 'html');
 	} => 'render';
 
 	get '/render2' => sub {
 		my $self = shift;
-	
+
 		my $data = $self->render_partial('render2', format => 'mail');
-	
+
 		$self->render(
 			handler => 'mail',
-		
+	
 			mail => {
 				To      => 'sharifulin@gmail.com',
 				Subject => $self->stash('subject'),
@@ -239,15 +240,17 @@ SYNOPSIS
 				Data    => $data,
 			},
 		);
-	
+
 		$self->render(template => 'render', format => 'html');
 	} => 'render';
+
+	app->log->level('error');
 
 	app->start;
 
 	__DATA__
 
-	@@ render.htMail.ep
+	@@ render.html.ep
 	<p>Привет render!</p>
 
 	@@ render.mail.ep

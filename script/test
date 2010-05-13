@@ -1,16 +1,17 @@
 #!/usr/bin/perl
-use lib qw(lib ../lib ../mojo/lib);
+use lib qw(lib ../lib ../mojo/lib ../../mojo/lib);
 use utf8;
 
 use Mojolicious::Lite;
 use MojoX::Renderer::Mail;
 
 app->renderer->add_handler(
-	Mail => MojoX::Renderer::Mail->build(
+	mail => MojoX::Renderer::Mail->build(
 		from     => 'sharifulin@gmail.com',
 		encoding => 'base64',
 		
 		# charset  => 'UTF-8',
+		
 		how      => 'sendmail',
 		howargs  => [ '/usr/sbin/sendmail -t' ],
 	),
@@ -55,10 +56,10 @@ get '/attach' => sub {
 				Data => 'Текст письма',
 			},
 			{
-				Type        => 'application/octet-stream',
+				Type        => 'BINARY',
 				Filename    => 'crash.data',
 				Disposition => 'attachment',
-				Encoding    => 'binary',
+				Encoding    => '8bit',
 				Data        => 'binary data binary data binary data binary data binary data',
 			},
 		],
@@ -140,6 +141,8 @@ get '/render2' => sub {
 	
 	$self->render(template => 'render', format => 'html');
 } => 'render';
+
+app->log->level('error');
 
 app->start;
 
