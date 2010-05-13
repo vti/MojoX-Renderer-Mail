@@ -1,0 +1,32 @@
+---
+abstract: 'Mail renderer for Mojo and Mojolicious, uses MIME::Lite'
+author:
+  - 'Anatoly Sharifulin <sharifulin@gmail.com>'
+build_requires:
+  Test::More: 0
+configure_requires:
+  Module::Build: 0.36
+generated_by: 'Module::Build version 0.3607'
+keywords:
+  - mojo
+  - mojolicious
+  - mime
+  - mail
+  - renderer
+license: perl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: MojoX-Renderer-Mail
+provides:
+  MojoX::Renderer::Mail:
+    file: lib/MojoX/Renderer/Mail.pm
+    version: 0.3
+requires:
+  Encode: 0
+  MIME::EncWords: 0
+  MIME::Lite: 0
+resources:
+  license: http://dev.perl.org/licenses/
+  repository: git://github.com/sharifulin/MojoX-Renderer-Mail.git
+version: 0.3
