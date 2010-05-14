@@ -7,7 +7,7 @@ my $builder = Module::Build->new(
 	license             => 'perl',
 	dist_author         => 'Anatoly Sharifulin <sharifulin@gmail.com>',
 	dist_version_from   => 'lib/MojoX/Renderer/Mail.pm',
-	dist_abstract       => 'Mail renderer for Mojo and Mojolicious, uses MIME::Lite',
+	dist_abstract       => 'Mail renderer for Mojo and Mojolicious',
 	build_requires => {
 		'Test::More' => 0,
 	},

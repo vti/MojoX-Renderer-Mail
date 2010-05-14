@@ -7,11 +7,11 @@ use Encode ();
 use MIME::Lite;
 use MIME::EncWords 'encode_mimeword';
 
-use constant TEST => $ENV{'TEST'} || 0;
-use constant DEBUG => $ENV{'DEBUG'} || 0;
+use constant TEST    => $ENV{'TEST' } || 0;
+use constant DEBUG   => $ENV{'DEBUG'} || 0;
 use constant CHARSET => 'UTF-8';
 
-our $VERSION = '0.3';
+our $VERSION = '0.31';
 
 sub build {
 	my $self = shift;
@@ -26,7 +26,7 @@ sub build {
 		my $encoding = $ctx->stash('encoding') || $args->{'encoding'};
 		my $encode   = $encoding eq 'base64' ? 'B' : 'Q';
 		
-		my $mimeword = defined $ctx->stash('mimeword') ? $ctx->stash('mimeword') : 1;
+		my $mimeword = defined $ctx->stash('mimeword') ? $ctx->stash('mimeword') : !$encoding ? 0 : 1;
 		
 		# tuning
 		
@@ -44,7 +44,17 @@ sub build {
 				$_ = join ",\n",
 					grep {
 						_enc($_);
-						s/^ (.*) \s+ (\S+ @ .*)$/encode_mimeword($1, $encode, $charset) . " <$2>"/ex; # XXX: no mimeword if all latin
+						{
+							next unless /(.*) \s+ (\S+ @ .*)/x;
+							
+							my($name, $email) = ($1, $2);
+							$email =~ s/(^<+|>+$)//sg;
+							
+							$_ = $name =~ /^[\w\s"'.,]+$/
+								? "$name <$email>"
+								: encode_mimeword($name, $encode, $charset) . " <$email>"
+							;
+						}
 						1;
 					}
 					split /\s*,\s*/
@@ -96,170 +106,172 @@ __END__
 
 NAME
 
-MojoX::Renderer::Mail - Mail renderer for Mojo and Mojolicious, uses MIME::Lite
+MojoX::Renderer::Mail - Mail renderer for Mojo and Mojolicious.
+
+Uses MIME::Lite and MIME::EncWords.
+
+All headers such as From, To, Cc, Bcc and Subject encode words.
 
 SYNOPSIS
 
-	#!/usr/bin/perl
-	use lib qw(lib ../lib ../mojo/lib ../../mojo/lib);
-	use utf8;
+  #!/usr/bin/perl
+  use utf8;
 
-	use Mojolicious::Lite;
-	use MojoX::Renderer::Mail;
+  use Mojolicious::Lite;
+  use MojoX::Renderer::Mail;
 
-	app->renderer->add_handler(
-		mail => MojoX::Renderer::Mail->build(
-			from     => 'sharifulin@gmail.com',
-			encoding => 'base64',
-	
-			# charset  => 'UTF-8',
-	
-			how      => 'sendmail',
-			howargs  => [ '/usr/sbin/sendmail -t' ],
-		),
-	);
+  app->renderer->add_handler(
+    mail => MojoX::Renderer::Mail->build(
+      from     => 'sharifulin@gmail.com',
+      encoding => 'base64',
+      how      => 'sendmail',
+      howargs  => [ '/usr/sbin/sendmail -t' ],
+    ),
+  );
 
-	get '/simple' => sub {
-		my $self = shift;
 
-		$self->render(
-			handler => 'mail',
-	
-			mail => {
-				To      => 'Анатолий Шарифулин sharifulin@gmail.com',
-				Cc      => 'Анатолий Шарифулин sharifulin@gmail.com, Анатолий2 Шарифулин2 sharifulin@gmail.com',
-				Subject => 'Тест',
-				Type    => 'text/html',
-				Data    => "<p>Письмо!</p>",
-			},
-		);
 
-		$self->render_text('OK');
-	};
+  get '/simple' => sub {
+    my $self = shift;
+    
+    $self->render(
+      handler => 'mail',
+      
+      mail => {
+        To      => '"Анатолий Шарифулин" sharifulin@gmail.com',
+        Cc      => '"Анатолий Шарифулин" <sharifulin@gmail.com>, Anatoly Sharifulin sharifulin@gmail.com, Анатолий2 Шарифулин2 sharifulin@gmail.com',
+        Bcc     => 'sharifulin@gmail.com',
+        Subject => 'Тест письмо',
+        Type    => 'text/html',
+        Data    => "<p>Привет!</p>",
+      },
+    );
+    
+    $self->render_text('OK');
+  };
 
-	get '/attach' => sub {
-		my $self = shift;
 
-		$self->render(
-			handler => 'mail',
-	
-			# charset => 'UTF-8',
-			# mimeword => 0 || 1,
-	
-			mail => {
-				To      => 'sharifulin@gmail.com',
-				Subject => 'Тест аттач',
-				Type    => 'multipart/mixed'
-			},
-	
-			attach => [
-				{
-					# Type => 'TEXT',
-					Data => 'Текст письма',
-				},
-				{
-					Type        => 'BINARY',
-					Filename    => 'crash.data',
-					Disposition => 'attachment',
-					Encoding    => '8bit',
-					Data        => 'binary data binary data binary data binary data binary data',
-				},
-			],
-	
-			headers => [ { 'X-My-Header' => 'Mojolicious' } ],
-	
-			# attr => [ ],
-		);
 
-		$self->render_text('OK');
-	};
+  get '/attach' => sub {
+    my $self = shift;
+    
+    $self->render(
+      handler => 'mail',
+        # charset  => '...',
+        # mimeword => 0,
+        
+        mail => {
+          To      => 'sharifulin@gmail.com',
+          Subject => 'Тест аттач',
+          Type    => 'multipart/mixed'
+        },
+        
+        attach => [
+          {
+            Data => 'Текст письма',
+          },
+          {
+            Type        => 'BINARY',
+            Filename    => 'crash.data',
+            Disposition => 'attachment',
+            Data        => 'binary data binary data binary data binary data binary data',
+          },
+        ],
 
-	get '/multi' => sub {
-		my $self = shift;
+        headers => [ { 'X-My-Header' => 'Mojolicious' } ],
+    );
 
-		$self->render(
-			handler => 'mail',
-	
-			mail => {
-				To      => 'sharifulin@gmail.com',
-				Subject => 'Мульти',
-				Type    => 'multipart/mixed'
-			},
-	
-			attach => [
-				{
-			        Type     => 'TEXT',
-			        Encoding => '7bit',
-			        Data     => "Just a quick note to say hi!"
-			    },
-				{
-			        Type     => 'image/gif',
-			        Path     => $0
-			    },
-				{
-			        Type     => 'x-gzip',
-			        Path     => "gzip < $0 |",
-			        ReadNow  => 1,
-			        Filename => "somefile.zzz"
-			    },
-			],
-		);
+    $self->render_text('OK');
+  };
 
-		$self->render_text('OK');
-	};
 
-	get '/render' => sub {
-		my $self = shift;
 
-		$self->render(
-			handler => 'mail',
-	
-			mail => {
-				To      => 'sharifulin@gmail.com',
-				Subject => 'Тест render',
-				Type    => 'text/html',
-				Data    => $self->render_partial('render', format => 'mail'),
-			},
-		);
+  get '/multi' => sub {
+    my $self = shift;
 
-		$self->render(format => 'html');
-	} => 'render';
+    $self->render(
+      handler => 'mail',
+        mail => {
+          To      => 'sharifulin@gmail.com',
+          Subject => 'Мульти',
+          Type    => 'multipart/mixed'
+        },
 
-	get '/render2' => sub {
-		my $self = shift;
+        attach => [
+          {
+            Type     => 'TEXT',
+            Encoding => '7bit',
+            Data     => "Just a quick note to say hi!"
+          },
+          {
+            Type     => 'image/gif',
+            Path     => $0
+          },
+          {
+            Type     => 'x-gzip',
+            Path     => "gzip < $0 |",
+            ReadNow  => 1,
+            Filename => "somefile.zip"
+          },
+       ],
+    );
+    
+    $self->render_text('OK');
+  };
 
-		my $data = $self->render_partial('render2', format => 'mail');
 
-		$self->render(
-			handler => 'mail',
-	
-			mail => {
-				To      => 'sharifulin@gmail.com',
-				Subject => $self->stash('subject'),
-				Type    => 'text/html',
-				Data    => $data,
-			},
-		);
 
-		$self->render(template => 'render', format => 'html');
-	} => 'render';
+  get '/render' => sub {
+    my $self = shift;
 
-	app->log->level('error');
+    $self->render(
+      handler => 'mail',
 
-	app->start;
+      mail => {
+        To      => 'sharifulin@gmail.com',
+        Subject => 'Тест render',
+        Type    => 'text/html',
+        Data    => $self->render_partial('render', format => 'mail'),
+      },
+    );
 
-	__DATA__
+    $self->render(format => 'html');
+  } => 'render';
 
-	@@ render.html.ep
-	<p>Привет render!</p>
+  get '/render2' => sub {
+    my $self = shift;
 
-	@@ render.mail.ep
-	<p>Привет васса render!</p>
+    my $data = $self->render_partial('render2', format => 'mail');
+    
+    $self->render(
+      handler => 'mail',
 
-	@@ render2.mail.ep
-	% stash 'subject' => 'Привет render2';
+      mail => {
+        To      => 'sharifulin@gmail.com',
+        Subject => $self->stash('subject'),
+        Type    => 'text/html',
+        Data    => $data,
+      },
+    );
 
-	<p>Привет васса render2!</p>
+    $self->render(template => 'render', format => 'html');
+  } => 'render';
+  
+  app->start;
+  
+  __DATA__
+
+  @@ render.html.ep
+  <p>Привет render!</p>
+
+  @@ render.mail.ep
+  <p>Привет васса render!</p>
+
+  @@ render2.mail.ep
+  % stash 'subject' => 'Привет render2';
+
+  <p>Привет васса render2!</p>
+
 
 =head1 METHODS
 
@@ -277,7 +289,7 @@ Default from address
 
 =item * encoding 
 
-Default encoding of Subject and any Data, value is L<http://search.cpan.org/~rjbs/MIME-Lite-3.027/lib/MIME/Lite.pm#Content_transfer_encodings|MIME::Lite content transfer encoding>, 
+Default encoding of Subject and any Data, value is MIME::Lite content transfer encoding L<http://search.cpan.org/~rjbs/MIME-Lite-3.027/lib/MIME/Lite.pm#Content_transfer_encodings>
 
 =item * charset
 
@@ -296,23 +308,24 @@ HOWARGS parameter of MIME::Lite::send (arrayref)
 
 =head1 RENDER
 
-	$self->render(
-		handler => 'Mail',
-		
-		mail   => { ... }, # as MIME::Lite->new( ... )
-		attach => [
-			{ ... }, # as MIME::Lite->attach( .. )
-			...
-		},
-		headers => [
-			{ ... }, # as MIME::Lite->add( .. )
-			...
-		},
-		attr => [
-			{ ... }, # as MIME::Lite->attr( .. )
-			...
-		},
-	);
+  $self->render(
+    handler => 'mail',
+    
+      mail   => { ... }, # as MIME::Lite->new( ... )
+      attach => [
+        { ... }, # as MIME::Lite->attach( .. )
+        ...
+      },
+      headers => [
+        { ... }, # as MIME::Lite->add( .. )
+        ...
+      },
+      attr => [
+        { ... }, # as MIME::Lite->attr( .. )
+        ...
+      },
+  );
+
 
 Supported parameters:
 
@@ -320,24 +333,24 @@ Supported parameters:
 
 =item * mail
 
-Hashref, containts parameters as I<new(PARAMHASH)>. See L<http://search.cpan.org/~rjbs/MIME-Lite-3.027/lib/MIME/Lite.pm#Construction|MIME::Lite>.
+Hashref, containts parameters as I<new(PARAMHASH)>. See MIME::Lite L<http://search.cpan.org/~rjbs/MIME-Lite-3.027/lib/MIME/Lite.pm#Construction>.
 
 =item * attach 
 
-Arrayref of hashref, hashref containts parameters as I<attach(PARAMHASH)>. See L<http://search.cpan.org/~rjbs/MIME-Lite-3.027/lib/MIME/Lite.pm#Construction|MIME::Lite>.
+Arrayref of hashref, hashref containts parameters as I<attach(PARAMHASH)>. See MIME::Lite L<http://search.cpan.org/~rjbs/MIME-Lite-3.027/lib/MIME/Lite.pm#Construction>.
 
 =item * headers
 
-Arrayref of hashref, hashref containts parameters as I<add(TAG, VALUE)>. See L<http://search.cpan.org/~rjbs/MIME-Lite-3.027/lib/MIME/Lite.pm#Construction|MIME::Lite>.
+Arrayref of hashref, hashref containts parameters as I<add(TAG, VALUE)>. See MIME::Lite L<http://search.cpan.org/~rjbs/MIME-Lite-3.027/lib/MIME/Lite.pm#Construction>.
 
 =item * attr
 
-Arrayref of hashref, hashref containts parameters as I<attr(ATTR, VALUE)>. See L<http://search.cpan.org/~rjbs/MIME-Lite-3.027/lib/MIME/Lite.pm#Construction|MIME::Lite>.
+Arrayref of hashref, hashref containts parameters as I<attr(ATTR, VALUE)>. See MIME::Lite L<http://search.cpan.org/~rjbs/MIME-Lite-3.027/lib/MIME/Lite.pm#Construction>.
 
 =back
 
 
-=head1 ENV
+=head1 ENVIROMENT VARIABLES
 
 Module has two env variables:
 
@@ -356,17 +369,32 @@ No send mail, default value is 0
 
 =head1 TEST AND RUN
 
-	TEST=1 DEBUG=1 PATH_INFO='/multi' script/test cgi
+  TEST=1 DEBUG=1 PATH_INFO='/multi' script/test cgi
 
 
 =head1 SEE ALSO
 
-L<MIME::Lite> L<MIME::EncWords> L<MojoX::Renderer> L<Mojolicious>
+=over 4
+
+=item * L<MIME::Lite>
+
+=item * L<MIME::EncWords>
+
+=item * L<MojoX::Renderer>
+
+=item * L<Mojolicious>
+
+=back
 
 
 =head1 AUTHOR
 
 Anatoly Sharifulin <sharifulin@gmail.com>
+
+=head1 THANKS
+
+Alex Kapranoff <kapranoff@gmail.com>
+
 
 =head1 BUGS
 
@@ -378,7 +406,7 @@ automatically be notified of progress on your bug as we make changes.
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc MojoX::Renderer::Mail
+  perldoc MojoX::Renderer::Mail
 
 You can also look for information at:
 

@@ -24,11 +24,12 @@ get '/simple' => sub {
 		handler => 'mail',
 		
 		mail => {
-			To      => 'Анатолий Шарифулин sharifulin@gmail.com',
-			Cc      => 'Анатолий Шарифулин sharifulin@gmail.com, Анатолий2 Шарифулин2 sharifulin@gmail.com',
-			Subject => 'Тест',
+			To      => '"Анатолий Шарифулин" sharifulin@gmail.com',
+			Cc      => '"Анатолий Шарифулин" <sharifulin@gmail.com>, Anatoly Sharifulin sharifulin@gmail.com, Анатолий2 Шарифулин2 sharifulin@gmail.com',
+			Bcc     => 'sharifulin@gmail.com',
+			Subject => 'Тест письмо',
 			Type    => 'text/html',
-			Data    => "<p>Письмо!</p>",
+			Data    => "<p>Привет!</p>",
 		},
 	);
 	
@@ -59,7 +60,6 @@ get '/attach' => sub {
 				Type        => 'BINARY',
 				Filename    => 'crash.data',
 				Disposition => 'attachment',
-				Encoding    => '8bit',
 				Data        => 'binary data binary data binary data binary data binary data',
 			},
 		],
