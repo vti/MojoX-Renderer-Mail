@@ -1,5 +1,5 @@
 ---
-abstract: 'Mail renderer for Mojo and Mojolicious, uses MIME::Lite'
+abstract: 'Mail renderer for Mojo and Mojolicious'
 author:
   - 'Anatoly Sharifulin <sharifulin@gmail.com>'
 build_requires:
@@ -21,7 +21,7 @@ name: MojoX-Renderer-Mail
 provides:
   MojoX::Renderer::Mail:
     file: lib/MojoX/Renderer/Mail.pm
-    version: 0.3
+    version: 0.31
 requires:
   Encode: 0
   MIME::EncWords: 0
@@ -29,4 +29,4 @@ requires:
 resources:
   license: http://dev.perl.org/licenses/
   repository: git://github.com/sharifulin/MojoX-Renderer-Mail.git
-version: 0.3
+version: 0.31
