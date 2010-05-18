@@ -11,7 +11,7 @@ use constant TEST    => $ENV{'TEST' } || 0;
 use constant DEBUG   => $ENV{'DEBUG'} || 0;
 use constant CHARSET => 'UTF-8';
 
-our $VERSION = '0.31';
+our $VERSION = '0.32';
 
 sub build {
 	my $self = shift;
@@ -104,15 +104,15 @@ __END__
 
 =encoding UTF-8
 
-NAME
+=head1 NAME
 
 MojoX::Renderer::Mail - Mail renderer for Mojo and Mojolicious.
 
 Uses MIME::Lite and MIME::EncWords.
 
-All headers such as From, To, Cc, Bcc and Subject encode words.
+All headers such as From, To, Cc, Bcc and Subject are encoded words.
 
-SYNOPSIS
+=head1 SYNOPSIS
 
   #!/usr/bin/perl
   use utf8;
@@ -129,7 +129,7 @@ SYNOPSIS
     ),
   );
 
-
+Simple mail example:
 
   get '/simple' => sub {
     my $self = shift;
@@ -139,7 +139,7 @@ SYNOPSIS
       
       mail => {
         To      => '"Анатолий Шарифулин" sharifulin@gmail.com',
-        Cc      => '"Анатолий Шарифулин" <sharifulin@gmail.com>, Anatoly Sharifulin sharifulin@gmail.com, Анатолий2 Шарифулин2 sharifulin@gmail.com',
+        Cc      => '"Анатолий Шарифулин" <sharifulin@gmail.com>, Anatoly Sharifulin sharifulin@gmail.com',
         Bcc     => 'sharifulin@gmail.com',
         Subject => 'Тест письмо',
         Type    => 'text/html',
@@ -150,7 +150,7 @@ SYNOPSIS
     $self->render_text('OK');
   };
 
-
+Attachment mail example:
 
   get '/attach' => sub {
     my $self = shift;
@@ -184,7 +184,7 @@ SYNOPSIS
     $self->render_text('OK');
   };
 
-
+Multipart mixed mail example:
 
   get '/multi' => sub {
     my $self = shift;
@@ -219,7 +219,7 @@ SYNOPSIS
     $self->render_text('OK');
   };
 
-
+Render mail example:
 
   get '/render' => sub {
     my $self = shift;

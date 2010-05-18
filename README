@@ -29,7 +29,7 @@ SYNOPSIS
       
       mail => {
         To      => '"Анатолий Шарифулин" sharifulin@gmail.com',
-        Cc      => '"Анатолий Шарифулин" <sharifulin@gmail.com>, Anatoly Sharifulin sharifulin@gmail.com, Анатолий2 Шарифулин2 sharifulin@gmail.com',
+        Cc      => '"Анатолий Шарифулин" <sharifulin@gmail.com>, Anatoly Sharifulin sharifulin@gmail.com',
         Bcc     => 'sharifulin@gmail.com',
         Subject => 'Тест письмо',
         Type    => 'text/html',
