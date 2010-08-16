@@ -1,5 +1,8 @@
 Revision history for MojoX-Renderer-Mail
 
+0.4    2010-08-16/14:05
+	Add mail plugin
+
 0.32   2010-05-18/17:55
 	POD fixes (codeholic)
 
